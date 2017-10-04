@@ -10,7 +10,7 @@ package gmf
 import "C"
 
 import (
-	"fmt"
+//	"fmt"
 )
 
 type Stream struct {
@@ -36,9 +36,9 @@ func (this *Stream) SetCodecFlags() {
 	this.avStream.codec.flags |= C.CODEC_FLAG_GLOBAL_HEADER
 }
 
-func (this *Stream) CodecCtx() *CodecCtx {
+func (this *Stream) CodecCtx() (*CodecCtx, error) {
 	if this.IsCodecCtxSet() {
-		return this.cc
+		return this.cc, nil
 	}
 
 	// @todo make explicit decoder/encoder definition
@@ -46,7 +46,8 @@ func (this *Stream) CodecCtx() *CodecCtx {
 	// and it should be decoder.
 	c, err := FindDecoder(int(this.avStream.codec.codec_id))
 	if err != nil {
-		panic(fmt.Sprintf("unable to initialize codec for stream '%d', error:", this.Index(), err))
+		return nil, err
+		//		panic(fmt.Sprintf("unable to initialize codec for stream '%d', error:", this.Index(), err))
 	}
 
 	this.cc = &CodecCtx{
@@ -56,7 +57,7 @@ func (this *Stream) CodecCtx() *CodecCtx {
 
 	this.cc.Open(nil)
 
-	return this.cc
+	return this.cc, nil
 }
 
 func (this *Stream) SetCodecCtx(cc *CodecCtx) {
@@ -94,7 +95,11 @@ func (this *Stream) TimeBase() AVRational {
 }
 
 func (this *Stream) Type() int32 {
-	return this.CodecCtx().Type()
+	ctx, err := this.CodecCtx()
+	if err != nil {
+		return ctx.Type()
+	}
+	return -1
 }
 
 func (this *Stream) IsAudio() bool {

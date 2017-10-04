@@ -89,22 +89,22 @@ var (
 	AV_CODEC_ID_TIFF       int = C.AV_CODEC_ID_TIFF
 	AV_CODEC_ID_GIF        int = C.AV_CODEC_ID_GIF
 
-	CODEC_FLAG_GLOBAL_HEADER int   = C.CODEC_FLAG_GLOBAL_HEADER
-	FF_MB_DECISION_SIMPLE    int   = C.FF_MB_DECISION_SIMPLE
-	FF_MB_DECISION_BITS      int   = C.FF_MB_DECISION_BITS
-	FF_MB_DECISION_RD        int   = C.FF_MB_DECISION_RD
+	CODEC_FLAG_GLOBAL_HEADER int = C.CODEC_FLAG_GLOBAL_HEADER
+	FF_MB_DECISION_SIMPLE    int = C.FF_MB_DECISION_SIMPLE
+	FF_MB_DECISION_BITS      int = C.FF_MB_DECISION_BITS
+	FF_MB_DECISION_RD        int = C.FF_MB_DECISION_RD
 
-	AV_SAMPLE_FMT_U8         int32 = C.AV_SAMPLE_FMT_U8
-	AV_SAMPLE_FMT_S16        int32 = C.AV_SAMPLE_FMT_S16
-	AV_SAMPLE_FMT_S32        int32 = C.AV_SAMPLE_FMT_S32
-	AV_SAMPLE_FMT_FLT        int32 = C.AV_SAMPLE_FMT_FLT
-	AV_SAMPLE_FMT_DBL        int32 = C.AV_SAMPLE_FMT_DBL
+	AV_SAMPLE_FMT_U8  int32 = C.AV_SAMPLE_FMT_U8
+	AV_SAMPLE_FMT_S16 int32 = C.AV_SAMPLE_FMT_S16
+	AV_SAMPLE_FMT_S32 int32 = C.AV_SAMPLE_FMT_S32
+	AV_SAMPLE_FMT_FLT int32 = C.AV_SAMPLE_FMT_FLT
+	AV_SAMPLE_FMT_DBL int32 = C.AV_SAMPLE_FMT_DBL
 
-	AV_SAMPLE_FMT_U8P         int32 = C.AV_SAMPLE_FMT_U8P
-	AV_SAMPLE_FMT_S16P        int32 = C.AV_SAMPLE_FMT_S16P
-	AV_SAMPLE_FMT_S32P        int32 = C.AV_SAMPLE_FMT_S32P
-	AV_SAMPLE_FMT_FLTP        int32 = C.AV_SAMPLE_FMT_FLTP
-	AV_SAMPLE_FMT_DBLP        int32 = C.AV_SAMPLE_FMT_DBLP
+	AV_SAMPLE_FMT_U8P  int32 = C.AV_SAMPLE_FMT_U8P
+	AV_SAMPLE_FMT_S16P int32 = C.AV_SAMPLE_FMT_S16P
+	AV_SAMPLE_FMT_S32P int32 = C.AV_SAMPLE_FMT_S32P
+	AV_SAMPLE_FMT_FLTP int32 = C.AV_SAMPLE_FMT_FLTP
+	AV_SAMPLE_FMT_DBLP int32 = C.AV_SAMPLE_FMT_DBLP
 )
 
 type SampleFmt int
@@ -138,9 +138,13 @@ func NewCodecCtx(codec *Codec, options ...[]*Option) *CodecCtx {
 	return result
 }
 
-func (this *CodecCtx) CopyExtra(ist *Stream) *CodecCtx {
+func (this *CodecCtx) CopyExtra(ist *Stream) (*CodecCtx, error) {
 	codec := this.avCodecCtx
-	icodec := ist.CodecCtx().avCodecCtx
+	ctx, err := ist.CodecCtx()
+	if err != nil {
+		return nil, err
+	}
+	icodec := ctx.avCodecCtx
 
 	codec.bits_per_raw_sample = icodec.bits_per_raw_sample
 	codec.chroma_sample_location = icodec.chroma_sample_location
@@ -163,12 +167,16 @@ func (this *CodecCtx) CopyExtra(ist *Stream) *CodecCtx {
 
 	codec.has_b_frames = icodec.has_b_frames
 
-	return this
+	return this, nil
 }
 
-func (this *CodecCtx) CopyBasic(ist *Stream) *CodecCtx {
+func (this *CodecCtx) CopyBasic(ist *Stream) (*CodecCtx, error) {
 	codec := this.avCodecCtx
-	icodec := ist.CodecCtx().avCodecCtx
+	ctx, err := ist.CodecCtx()
+	if err != nil {
+		return nil, err
+	}
+	icodec := ctx.avCodecCtx
 
 	codec.bit_rate = icodec.bit_rate
 	codec.pix_fmt = icodec.pix_fmt
@@ -184,7 +192,7 @@ func (this *CodecCtx) CopyBasic(ist *Stream) *CodecCtx {
 
 	codec.channel_layout = icodec.channel_layout
 
-	return this
+	return this, nil
 }
 
 func (this *CodecCtx) Open(dict *Dict) error {
@@ -217,7 +225,7 @@ func (this *CodecCtx) Free() {
 
 func (this *CodecCtx) CloseAndRelease() {
 	this.Close()
-       C.call_av_freep(this.avCodecCtx)
+	C.call_av_freep(this.avCodecCtx)
 }
 
 // @todo
