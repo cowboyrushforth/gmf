@@ -166,6 +166,7 @@ func NewInputCtx(filename string) (*FmtCtx, error) {
 	}
 
 	if err := ctx.OpenInput(filename); err != nil {
+
 		return nil, err
 	}
 
@@ -197,10 +198,12 @@ func (this *FmtCtx) OpenInput(filename string) error {
 	}
 
 	if averr := C.avformat_open_input(&this.avCtx, cfilename, nil, nil); averr < 0 {
+		this.CloseInputAndRelease()
 		return errors.New(fmt.Sprintf("Error opening input '%s': %s", filename, AvError(int(averr))))
 	}
 
 	if averr := C.avformat_find_stream_info(this.avCtx, nil); averr < 0 {
+		this.CloseInputAndRelease()
 		return errors.New(fmt.Sprintf("Unable to find stream info: %s", AvError(int(averr))))
 	}
 
